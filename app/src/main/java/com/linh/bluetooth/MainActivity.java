@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
+import android.os.ParcelUuid;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,9 +32,9 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 1;
-    private static final UUID MY_UUID = UUID.fromString("5311b035-80e7-403d-9a99-1de8ab3b2829");
-    private static final String TAG = "DEBUG";
-    private static final String NAME= "Tablet";
+    private static final UUID MY_UUID = UUID.fromString("1145539c-b5ec-11e8-96f8-529269fb1459");
+    private static final String TAG = "MainActivity";
+    private static final String NAME= "Bluetooth";
 
     private static final int STATE_CONNECTING = 2;
     private static final int STATE_CONNECTED = 3;
@@ -52,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     BluetoothDevice bluetoothDevice;
     BluetoothSocket bluetoothSocket;
+
     Set<BluetoothDevice> bluetoothDevices;
     ArrayAdapter<String> arrayAdapter;
     List<String> ltDevice;
@@ -89,6 +91,19 @@ public class MainActivity extends AppCompatActivity {
             }
             if(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE.equals(action)){
                 lbStatus.setText("Requesting...");
+            }
+            if(BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)){
+                if(bluetoothDevice.getBondState() == BluetoothDevice.BOND_BONDED){
+                    Log.i(TAG,"BroadcastReceiver : BOND_BONDED");
+                }
+
+                if(bluetoothDevice.getBondState() == BluetoothDevice.BOND_BONDING){
+                    Log.i(TAG,"BroadcastReceiver : BOND_BONDING");
+                }
+
+                if(bluetoothDevice.getBondState() == BluetoothDevice.BOND_NONE){
+                    Log.i(TAG,"BroadcastReceiver : BOND_NONE");
+                }
             }
         }
     };
@@ -226,6 +241,7 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException connectException) {
                 // Unable to connect; close the socket and return.
                 //progress.dismiss();
+                Log.e(TAG,"Connection error", connectException);
                 try {
                     mmSocket.close();
                     msg = Message.obtain();
@@ -233,7 +249,6 @@ public class MainActivity extends AppCompatActivity {
                     handler.sendMessage(msg);
                 } catch (IOException closeException) {
                     Log.e(TAG, "Could not close the client socket", closeException);
-
                 }
                 return;
             }
@@ -355,12 +370,16 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 lbDeviceName.setText(ltDevice.get(position));
                 bluetoothAdapter.cancelDiscovery();
-                Log.i(TAG, position +"");
                 //AcceptThread acceptThread = new AcceptThread();
                 //acceptThread.start();
+
+                Log.i(TAG,ltDevice.get(position));
                 bluetoothDevice = (BluetoothDevice) bluetoothDevices.toArray()[position];
-                ConnectThread connectThread = new ConnectThread(bluetoothDevice);
-                connectThread.start();
+                if(bluetoothDevice.getBondState() != BluetoothDevice.BOND_BONDED)
+                    bluetoothDevice.createBond();
+                
+                //ConnectThread connectThread = new ConnectThread(bluetoothDevice);
+                //connectThread.start();
                 //ConnectBT connectBT = new ConnectBT();
                 //connectBT.execute();
             }
@@ -382,10 +401,10 @@ public class MainActivity extends AppCompatActivity {
 
         requestBluetoothPermission();
 
-
         registerReceiver(broadcastReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
         registerReceiver(broadcastReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
         registerReceiver(broadcastReceiver, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
+        registerReceiver(broadcastReceiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
     }
 
     @Override
