@@ -102,6 +102,10 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             }else{
                 lbStatus.setText("Bluetooth ON");
+                Intent discoverableIntent =
+                        new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+                discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+                startActivity(discoverableIntent);
             }
         }
     }
@@ -110,11 +114,6 @@ public class MainActivity extends AppCompatActivity {
         bluetoothDevices.clear();
         ltDevice.clear();
         arrayAdapter.notifyDataSetChanged();
-
-        Intent discoverableIntent =
-                new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-        startActivity(discoverableIntent);
 
         for (BluetoothDevice bluetoothDevice: bluetoothAdapter.getBondedDevices()
              ) {
